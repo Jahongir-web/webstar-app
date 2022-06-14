@@ -1,6 +1,8 @@
 const User = require("../models/userModel")
 const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
+const dotenv = require('dotenv')
+dotenv.config()
 
 const userCtrl = {
   login: async (req, res)=> {
@@ -57,6 +59,21 @@ const userCtrl = {
       await user.save()
 
       res.status(201).json({message: "Signup successfully!"})
+    } catch (error) {
+      res.status(400).json({message: error.message})
+    }
+  },
+
+  userInfo: async(req, res)=> {
+    try {
+      const {access_token} = req.headers
+      if(access_token){
+        const {id, role, name, surname, avatar} = jwt.verify(access_token, process.env.SECRET_KEY)
+        return res.status(200).json({user:{id, role, name, surname, avatar}})
+      }
+      else {
+        return res.status(200).json({message: "Kirish amalga oshmagan!"})
+      }
     } catch (error) {
       res.status(400).json({message: error.message})
     }

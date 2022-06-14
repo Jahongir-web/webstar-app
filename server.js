@@ -19,7 +19,9 @@ const URL = process.env.MONGO_URL
 app.use(express.json())
 app.use(express.urlencoded({extended: true}))
 app.use(cors())
-app.use(fileUpload())
+app.use(fileUpload({
+  useTempFiles: true,
+}))
 
 // Routes
 app.use("/api", routes)
