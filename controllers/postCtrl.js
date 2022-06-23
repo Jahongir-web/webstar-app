@@ -56,6 +56,13 @@ const postCtrl = {
               ],
               as: "comments",
             }
+          },
+          {$lookup: {from: "users", let: {authorId: "$authorId"},
+                pipeline: [
+                  {$match: {$expr: {$eq: ["$_id", "$$authorId"]}}}
+                ],
+              as: "author",
+            }
           }
         ])
         return res.status(200).json(posts)
@@ -68,6 +75,13 @@ const postCtrl = {
               {$match: {$expr: {$eq: ["$postId", "$$postId"]}}}
             ],
             as: "comments",
+          }
+        },
+        {$lookup: {from: "users", let: {authorId: "$authorId"},
+              pipeline: [
+                {$match: {$expr: {$eq: ["$_id", "$$authorId"]}}}
+              ],
+            as: "author",
           }
         }
       ])
