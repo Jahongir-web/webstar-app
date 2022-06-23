@@ -1,7 +1,10 @@
 const fs = require("fs")
 const Post = require("../models/postModel")
+const Comment = require("../models/commentModel")
+
 
 const {uploadedFile, deleteFile, removeTmp} = require("../services/upload")
+const { default: mongoose } = require("mongoose")
 
 
 const postCtrl = {
@@ -45,11 +48,29 @@ const postCtrl = {
   getPosts: async (req, res)=> {
     try {
       if(req.user && req.user.role === "admin") {
-        const posts = await Post.find()
+        const posts = await Post.aggregate([
+          {$match: {}},
+          {$lookup: {from: "comments", let: {postId: "$_id"},
+              pipeline: [
+                {$match: {$expr: {$eq: ["$postId", "$$postId"]}}}
+              ],
+              as: "comments",
+            }
+          }
+        ])
         return res.status(200).json(posts)
       }
 
-      const posts = await Post.find({public: true})
+      const posts = await Post.aggregate([
+        {$match: {public: true}},
+        {$lookup: {from: "comments", let: {postId: "$_id"},
+            pipeline: [
+              {$match: {$expr: {$eq: ["$postId", "$$postId"]}}}
+            ],
+            as: "comments",
+          }
+        }
+      ])
       res.status(200).json(posts)
 
     } catch (error) {
@@ -66,19 +87,25 @@ const postCtrl = {
 
       if(req.user) {
 
-        if(req.files) {
-          const image = req.files.image
-          if (image.mimetype !== "image/jpeg" && image.mimetype !== "image/png") {
-            removeTmp(image.tempFilePath);
-            return res.status(400).json({ message: "File format is should png or jpeg" });
-          }
-    
-          const imgPost = await uploadedFile(image)
-          req.body.image = imgPost
-        }
-        await Post.findByIdAndUpdate(id, req.body)
+        if(req.user.role === 'admin' || `${post.authorId}` == new mongoose.Types.ObjectId(`${req.user.id}`)) {
+          if(req.files) {
+            const image = req.files.image
+            if (image.mimetype !== "image/jpeg" && image.mimetype !== "image/png") {
+              removeTmp(image.tempFilePath);
+              return res.status(400).json({ message: "File format is should png or jpeg" });
+            }
             
-        return res.json({message: "Post Updated!"})
+            const imgPost = await uploadedFile(image)
+            req.body.image = imgPost
+
+            const postImgId = post.image.public_id 
+            await deleteFile(postImgId)
+          }
+          
+          await Post.findByIdAndUpdate(id, req.body)
+              
+          return res.json({message: "Post Updated!"})
+        }
       }
 
       res.status(401).json({message: "Not allowed"})
@@ -95,9 +122,18 @@ const postCtrl = {
 
       const post = await Post.findByIdAndUpdate(id, { $inc: { views: 1 } });
       if(!post) return res.json({message: "Post not found!"})
-            
-      return res.json(post)      
-      
+
+      const posts = await Post.aggregate([
+        {$match: {_id: new mongoose.Types.ObjectId(id)}},
+        {$lookup: {from: "comments", let: {postId: "$_id"},
+            pipeline: [
+              {$match: {$expr: {$eq: ["$postId", "$$postId"]}}}
+            ],
+            as: "comments",
+          }
+        }
+      ])
+      return res.status(200).json(posts)      
     } catch (error) {
       res.status(400).json({message: error.message})
     }
@@ -109,15 +145,19 @@ const postCtrl = {
       if(req.user) {
         const {id} = req.params
         
-        const post = await Post.findByIdAndDelete(id)
-        
+        const post = await Post.findByIdAndDelete(id)        
         if(!post) return res.json({message: "Post not found!"})
+        const postImgId = post.image.public_id    
+
+        if(req.user.role === 'admin') {
+          await deleteFile(postImgId)              
+          return res.json({message: "Post Deleted!"})
+        }
   
-        const postImgId = post.image.public_id
-  
-        await deleteFile(postImgId)
-            
-        return res.json({message: "Post Deleted!"})
+        if(`${post.authorId}` == new mongoose.Types.ObjectId(`${req.user.id}`)) {
+          await deleteFile(postImgId)              
+          return res.json({message: "Post Deleted!"})
+        }
       }
 
       res.status(401).json({message: "Not allowed"})
@@ -211,11 +251,17 @@ const postCtrl = {
       if(req.user) {
         const {id} = req.user
         
-        const posts = await Post.find({authorId: id})
-
-        if(posts.length === 0) return res.status(404).json({message: "Posts not found!"})
-             
-        return res.json(posts)
+        const posts = await Post.aggregate([
+          {$match: {authorId: new mongoose.Types.ObjectId(id)}},
+          {$lookup: {from: "comments", let: {postId: "$_id"},
+              pipeline: [
+                {$match: {$expr: {$eq: ["$postId", "$$postId"]}}}
+              ],
+              as: "comments",
+            }
+          }
+        ])
+        return res.status(200).json(posts)
       }
 
       res.status(401).json({message: "Not allowed"})
