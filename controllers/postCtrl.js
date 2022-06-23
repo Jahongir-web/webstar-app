@@ -89,6 +89,21 @@ const postCtrl = {
 
   },
 
+  getById: async (req, res) => {
+    try {
+      const {id} = req.params
+
+      const post = await Post.findByIdAndUpdate(id, { $inc: { views: 1 } });
+      if(!post) return res.json({message: "Post not found!"})
+            
+      return res.json(post)      
+      
+    } catch (error) {
+      res.status(400).json({message: error.message})
+    }
+
+  },
+
   deletePost: async (req, res) => {
     try {
       if(req.user) {
@@ -103,6 +118,104 @@ const postCtrl = {
         await deleteFile(postImgId)
             
         return res.json({message: "Post Deleted!"})
+      }
+
+      res.status(401).json({message: "Not allowed"})
+      
+    } catch (error) {
+      res.status(400).json({message: error.message})
+    }
+  },
+
+  like: async (req, res) => {
+    try {
+      if(req.user) {
+        const {id} = req.params
+        const userId = req.user.id
+
+        const post = await Post.findById(id)
+        
+        if(!post) return res.json({message: "Post not found!"})
+  
+        const {like, dislike} = post
+
+        const checkLikeIndex = like.findIndex(index => index === userId) 
+        const checkDislikeIndex = dislike.findIndex(index => index === userId) 
+
+        if(checkLikeIndex > -1) {
+          like.splice(checkLikeIndex, 1)
+          await Post.findByIdAndUpdate(id, {like})
+          return res.json({message: "your reaction was added post"})
+        }
+        if(checkDislikeIndex > -1) {
+          dislike.splice(checkLikeIndex, 1)
+          like.push(userId)
+          await Post.findByIdAndUpdate(id, {like, dislike})     
+          return res.json({message: "your reaction was added post"})
+        }        
+        like.push(userId)
+        await Post.findByIdAndUpdate(id, {like})              
+            
+        return res.json({message: "your reaction was added post"})
+      }
+
+      res.status(401).json({message: "Not allowed"})
+      
+    } catch (error) {
+      res.status(400).json({message: error.message})
+    }
+  },
+
+  dislike: async (req, res) => {
+    try {
+      if(req.user) {
+        const {id} = req.params
+        const userId = req.user.id
+
+        const post = await Post.findById(id)
+        
+        if(!post) return res.json({message: "Post not found!"})
+  
+        const {like, dislike} = post
+
+        const checkLikeIndex = like.findIndex(index => index === userId) 
+        const checkDislikeIndex = dislike.findIndex(index => index === userId) 
+
+        if(checkLikeIndex > -1) {
+          like.splice(checkLikeIndex, 1)
+          dislike.push(userId)
+          await Post.findByIdAndUpdate(id, {like, dislike})
+          return res.json({message: "your reaction was added post"})
+        }
+        if(checkDislikeIndex > -1) {
+          dislike.splice(checkLikeIndex, 1)
+          await Post.findByIdAndUpdate(id, {dislike})     
+          return res.json({message: "your reaction was added post"})
+        }
+        
+        dislike.push(userId)
+        await Post.findByIdAndUpdate(id, {dislike})    
+            
+        return res.json({message: "your reaction was added post"})
+      }
+
+      res.status(401).json({message: "Not allowed"})
+      
+    } catch (error) {
+      res.status(400).json({message: error.message})
+    }
+  },
+
+  getUserPosts: async (req, res) => {
+    try {
+      if(req.user) {
+        const {id} = req.user
+        
+        const posts = await Post.find({authorId: id})
+
+        if(posts.length === 0) return res.status(404).json({message: "Posts not found!"})
+             
+        return res.json(posts)
       }
 
       res.status(401).json({message: "Not allowed"})
