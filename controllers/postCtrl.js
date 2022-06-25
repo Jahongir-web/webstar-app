@@ -59,7 +59,15 @@ const postCtrl = {
           },
           {$lookup: {from: "users", let: {authorId: "$authorId"},
                 pipeline: [
-                  {$match: {$expr: {$eq: ["$_id", "$$authorId"]}}}
+                  {$match: {$expr: {$eq: ["$_id", "$$authorId"]}}},
+                  {
+                    $project: {
+                      _id: 1,
+                      name: 1,
+                      surname: 1,
+                      email: 1
+                    }
+                  }
                 ],
               as: "author",
             }
@@ -79,7 +87,15 @@ const postCtrl = {
         },
         {$lookup: {from: "users", let: {authorId: "$authorId"},
               pipeline: [
-                {$match: {$expr: {$eq: ["$_id", "$$authorId"]}}}
+                {$match: {$expr: {$eq: ["$_id", "$$authorId"]}}},
+                {
+                  $project: {
+                    _id: 1,
+                    name: 1,
+                    surname: 1,
+                    email: 1
+                  }
+                }
               ],
             as: "author",
           }
@@ -144,6 +160,21 @@ const postCtrl = {
               {$match: {$expr: {$eq: ["$postId", "$$postId"]}}}
             ],
             as: "comments",
+          }
+        },
+        {$lookup: {from: "users", let: {authorId: "$authorId"},
+              pipeline: [
+                {$match: {$expr: {$eq: ["$_id", "$$authorId"]}}},
+                {
+                  $project: {
+                    _id: 1,
+                    name: 1,
+                    surname: 1,
+                    email: 1
+                  }
+                }
+              ],
+            as: "author",
           }
         }
       ])
@@ -272,6 +303,21 @@ const postCtrl = {
                 {$match: {$expr: {$eq: ["$postId", "$$postId"]}}}
               ],
               as: "comments",
+            }
+          },
+          {$lookup: {from: "users", let: {authorId: "$authorId"},
+                pipeline: [
+                  {$match: {$expr: {$eq: ["$_id", "$$authorId"]}}},
+                  {
+                    $project: {
+                      _id: 1,
+                      name: 1,
+                      surname: 1,
+                      email: 1
+                    }
+                  }
+                ],
+              as: "author",
             }
           }
         ])
