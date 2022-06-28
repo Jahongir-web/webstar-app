@@ -52,7 +52,20 @@ const postCtrl = {
           {$match: {}},
           {$lookup: {from: "comments", let: {postId: "$_id"},
               pipeline: [
-                {$match: {$expr: {$eq: ["$postId", "$$postId"]}}}
+                {$match: {$expr: {$eq: ["$postId", "$$postId"]}}},
+                {$lookup: {from: "users", let: {authorId: "$authorId"},
+                pipeline: [
+                  {$match: {$expr: {$eq: ["$_id", "$$authorId"]}}},
+                  {
+                    $project: {
+                      name: 1,
+                      surname: 1
+                    }
+                  }
+                ],
+                as: "author",
+              }
+              }
               ],
               as: "comments",
             }
@@ -80,7 +93,20 @@ const postCtrl = {
         {$match: {public: true}},
         {$lookup: {from: "comments", let: {postId: "$_id"},
             pipeline: [
-              {$match: {$expr: {$eq: ["$postId", "$$postId"]}}}
+              {$match: {$expr: {$eq: ["$postId", "$$postId"]}}},
+              {$lookup: {from: "users", let: {authorId: "$authorId"},
+              pipeline: [
+                {$match: {$expr: {$eq: ["$_id", "$$authorId"]}}},
+                {
+                  $project: {
+                    name: 1,
+                    surname: 1
+                  }
+                }
+              ],
+              as: "author",
+              }
+              }
             ],
             as: "comments",
           }
@@ -104,7 +130,7 @@ const postCtrl = {
       res.status(200).json(posts)
 
     } catch (error) {
-      res.status(400).json({message: error.message})
+      res.json(error)
     }
   },
 
@@ -157,7 +183,20 @@ const postCtrl = {
         {$match: {_id: new mongoose.Types.ObjectId(id)}},
         {$lookup: {from: "comments", let: {postId: "$_id"},
             pipeline: [
-              {$match: {$expr: {$eq: ["$postId", "$$postId"]}}}
+              {$match: {$expr: {$eq: ["$postId", "$$postId"]}}},
+              {$lookup: {from: "users", let: {authorId: "$authorId"},
+              pipeline: [
+                {$match: {$expr: {$eq: ["$_id", "$$authorId"]}}},
+                {
+                  $project: {
+                    name: 1,
+                    surname: 1
+                  }
+                }
+              ],
+              as: "author",
+              }
+              }
             ],
             as: "comments",
           }
@@ -300,7 +339,20 @@ const postCtrl = {
           {$match: {authorId: new mongoose.Types.ObjectId(id)}},
           {$lookup: {from: "comments", let: {postId: "$_id"},
               pipeline: [
-                {$match: {$expr: {$eq: ["$postId", "$$postId"]}}}
+                {$match: {$expr: {$eq: ["$postId", "$$postId"]}}},
+                {$lookup: {from: "users", let: {authorId: "$authorId"},
+                pipeline: [
+                  {$match: {$expr: {$eq: ["$_id", "$$authorId"]}}},
+                  {
+                    $project: {
+                      name: 1,
+                      surname: 1
+                    }
+                  }
+                ],
+                as: "author",
+              }
+              }
               ],
               as: "comments",
             }
