@@ -330,6 +330,99 @@ const postCtrl = {
     }
   },
 
+  searchPost: async (req, res) => {
+    try {
+      const {title} = req.query
+      if(req.user && req.user.role === "admin") {
+        const result = await Post.aggregate([
+          {$match: {title: { $regex: title, $options: 'i' }}},
+          {$lookup: {from: "comments", let: {postId: "$_id"},
+              pipeline: [
+                {$match: {$expr: {$eq: ["$postId", "$$postId"]}}},
+                {$lookup: {from: "users", let: {authorId: "$authorId"},
+                pipeline: [
+                  {$match: {$expr: {$eq: ["$_id", "$$authorId"]}}},
+                  {
+                    $project: {
+                      name: 1,
+                      surname: 1
+                    }
+                  }
+                ],
+                as: "author",
+              }
+              }
+              ],
+              as: "comments",
+            }
+          },
+          {$lookup: {from: "users", let: {authorId: "$authorId"},
+                pipeline: [
+                  {$match: {$expr: {$eq: ["$_id", "$$authorId"]}}},
+                  {
+                    $project: {
+                      _id: 1,
+                      name: 1,
+                      surname: 1,
+                      email: 1
+                    }
+                  }
+                ],
+              as: "author",
+            }
+          }
+        ])
+    
+        return res.status(200).send(result)
+      }
+
+      const result = await Post.aggregate([
+        {$match: {title: { $regex: title, $options: 'i' }}},
+        {$match: {public: true}},
+        {$lookup: {from: "comments", let: {postId: "$_id"},
+            pipeline: [
+              {$match: {$expr: {$eq: ["$postId", "$$postId"]}}},
+              {$lookup: {from: "users", let: {authorId: "$authorId"},
+              pipeline: [
+                {$match: {$expr: {$eq: ["$_id", "$$authorId"]}}},
+                {
+                  $project: {
+                    name: 1,
+                    surname: 1
+                  }
+                }
+              ],
+              as: "author",
+            }
+            }
+            ],
+            as: "comments",
+          }
+        },
+        {$lookup: {from: "users", let: {authorId: "$authorId"},
+              pipeline: [
+                {$match: {$expr: {$eq: ["$_id", "$$authorId"]}}},
+                {
+                  $project: {
+                    _id: 1,
+                    name: 1,
+                    surname: 1,
+                    email: 1
+                  }
+                }
+              ],
+            as: "author",
+          }
+        }
+      ])
+  
+      res.status(200).send(result)
+
+    } catch (error) {
+      
+    }
+  },
+
   getUserPosts: async (req, res) => {
     try {
       if(req.user) {

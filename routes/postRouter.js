@@ -5,6 +5,7 @@ const authRole = require("../middlewares/auth")
 const router = express.Router()
 
 router.get("/post", authRole(), postCtrl.getPosts)
+router.get("/search", authRole(), postCtrl.searchPost)
 router.post("/post", authRole(), postCtrl.createPost)
 router.put("/post/:id", authRole(), postCtrl.updatePost)
 router.delete("/post/:id", authRole(), postCtrl.deletePost)
