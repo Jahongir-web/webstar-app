@@ -25,7 +25,7 @@ const userCtrl = {
         return res.status(401).json({message: "Invalid credentials"})
       }
 
-      const token = jwt.sign({id: user._id, role: user.role, name: user.name, surname: user.surname, avatar: user.avatar}, process.env.SECRET_KEY, {expiresIn: "1h"})
+      const token = jwt.sign({id: user._id, role: user.role, name: user.name, surname: user.surname, avatar: user.avatar}, process.env.SECRET_KEY, {expiresIn: "24h"})
 
       res.status(200).json({message: "Login successfully!", token: token})
     } catch (error) {
