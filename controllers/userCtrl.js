@@ -58,7 +58,9 @@ const userCtrl = {
       })
       await user.save()
 
-      res.status(201).json({message: "Signup successfully!"})
+      const token = jwt.sign({id: user._id, role: user.role, name: user.name, surname: user.surname, avatar: user.avatar}, process.env.SECRET_KEY, {expiresIn: "24h"})
+
+      res.status(201).json({message: "Signup successfully!", token: token})
     } catch (error) {
       res.status(400).json({message: error.message})
     }
